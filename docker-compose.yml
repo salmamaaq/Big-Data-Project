@@ -1,0 +1,66 @@
+
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    healthcheck:
+      test: mongosh --eval "db.runCommand('ping')"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+#  spark:
+#   image: bitnami/spark:3.3.0
+#    container_name: spark
+#    ports:
+#      - "4040:4040"  # Spark UI port
+#      - "7077:7077"
+#      - "8080:8080"
+#    volumes:
+#      - ./:/opt/bitnami/spark/work-dir
+#      - ./spark-jars:/opt/bitnami/spark/jars
+#    environment:
+#      - SPARK_MODE=master
+#      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+#      - SPARK_RPC_ENCRYPTION_ENABLED=no
+#     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+#      - SPARK_SSL_ENABLED=no
+#    depends_on:
+#      - kafka
+#      - mongodb
+
+volumes:
+  mongodb_data:
